@@ -593,8 +593,29 @@ void TutorialGame::MoveSelectedObject() {
 		if (world->Raycast(ray, closestCollision, true)) {
 			if (closestCollision.node == selectionObject) {
 				selectionObject->GetPhysicsObject()->
-					AddForce(ray.GetDirection() * forceMagnitude);
+					AddForceAtPosition(ray.GetDirection() * forceMagnitude,
+						closestCollision.collidedAt);
 			}
 		}
+	}
+	if (!lockedObject) return;
+	//Move the locked objects
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::W)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(0, 0, -1) * forceMagnitude);
+	}
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::S)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(0, 0, 1) * forceMagnitude);
+	}
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::D)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(1, 0, 0) * forceMagnitude);
+	}
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::A)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(-1, 0, 0) * forceMagnitude);
+	}
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::SHIFT)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(0, 1, 0) * forceMagnitude);
+	}
+	if (Window::GetKeyboard()->KeyDown(NCL::KeyboardKeys::SPACE)) {
+		lockedObject->GetPhysicsObject()->AddForce(Vector3(0, -1, 0) * forceMagnitude);
 	}
 }

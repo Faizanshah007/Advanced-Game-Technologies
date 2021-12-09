@@ -113,80 +113,103 @@ bool CollisionDetection::RayOBBIntersection(const Ray&r, const Transform& worldT
 	return collided;
 }
 
+float InigoCapsule(Vector3 rayOrigin, Vector3 RayDirection,
+	Vector3 pa, Vector3 pb, float radius) {
+	Vector3  lineSegment = pb - pa;
+	Vector3  relativeOrigin = rayOrigin - pa;
+	float baba = Vector3::Dot(lineSegment, lineSegment);
+	float bard = Vector3::Dot(lineSegment, RayDirection);
+	float baoa = Vector3::Dot(lineSegment, relativeOrigin);
+	float rdoa = Vector3::Dot(RayDirection, relativeOrigin);
+	float oaoa = Vector3::Dot(relativeOrigin, relativeOrigin);
+	float a = baba - bard * bard;
+	float b = baba * rdoa - baoa * bard;
+	float c = baba * oaoa - baoa * baoa - radius * radius * baba;
+	float h = b * b - a * c;
+	if (h >= 0.0)
+	{
+		float t = (-b - sqrt(h)) / a;
+		float y = baoa + t * bard;
+		// body
+		if (y > 0.0 && y < baba) return t;
+		// caps
+		Vector3 oc = (y <= 0.0) ? relativeOrigin : rayOrigin - pb;
+		b = Vector3::Dot(RayDirection, oc);
+		c = Vector3::Dot(oc, oc) - radius * radius;
+		h = b * b - c;
+		if (h > 0.0) return -b - sqrt(h);
+	}
+	return -1.0;
+}
+
 bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& worldTransform, const CapsuleVolume& volume, RayCollision& collision) {
-
-	//Dummy Values
-	collision.collidedAt = Vector3(1,2,3);
-	collision.rayDistance = 300.0f;
-	//
-
+	
 	Quaternion orientation = worldTransform.GetOrientation();
 	Vector3 position = worldTransform.GetPosition();
 
 	Matrix3 transform = Matrix3(orientation);
-	Matrix3 invTransform = Matrix3(orientation.Conjugate());
-
-	Vector3 localRayPos = r.GetPosition() - position;
-
-	Ray tempRay(invTransform * localRayPos, invTransform * r.GetDirection());
 
 	Vector3 up = Vector3(0, 1, 0);
-	Vector3 right = Vector3(1, 0, 0);
 	Vector3 origin = Vector3(0, 0, 0);
 
-	RayCollision planeIntersectCollision;
+	Vector3 top(origin + up * volume.GetHalfHeight()),
+		bottom(origin - up * volume.GetHalfHeight());
 
+	float rayDist = InigoCapsule(r.GetPosition(), r.GetDirection(),
+		transform * top + position, transform * bottom + position, volume.GetRadius());
+
+	if (rayDist == -1.0f) return false;
+	
+	collision.rayDistance = rayDist;
+	collision.collidedAt = r.GetPosition() + r.GetDirection() * rayDist;
+
+	/*Debug::DrawLine(r.GetPosition(), collision.collidedAt, Debug::CYAN, 50.0f);
 	float hemisphereOrigDist = (volume.GetHalfHeight() - volume.GetRadius());
-
 	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
 		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
+	Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 50.0f);
+	Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 50.0f);
+	Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 50.0f);
+	Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 50.0f);
+	Vector3 right = Vector3(1, 0, 0);
+	Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 50.0f);
+	Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 50.0f);*/
 
-	//Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 50.0f);
-	//Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 50.0f);
+	return true;
 
-	//Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 50.0f);
-	//Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 50.0f);
-
-	//Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 50.0f);
-	//Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 50.0f);
-
-
-
-	Vector3 planeNormal = (tempRay.GetPosition() - origin).Normalised();
-
-	Plane rayCapsuleOrigPlane(planeNormal, origin.Length());
-
-	if (RayPlaneIntersection(tempRay, rayCapsuleOrigPlane, planeIntersectCollision)) {
-		Vector3 planeIntersectionPoint = planeIntersectCollision.collidedAt;
-		if (planeIntersectCollision.collidedAt[1] >= hemisphereOrigDist) {
-			if (volume.GetRadius() < (planeIntersectionPoint - upperHemisphereOrig).Length()) {
-				//Debug::Print("here1-", Vector2(20.0f, 10.0f));
-				return false;
-			}
-			//Debug::Print("here1", Vector2(10.0f, 10.0f));
-			return true;
-		}
-		else if (planeIntersectionPoint[1] <= -hemisphereOrigDist) {
-			if (volume.GetRadius() < (planeIntersectionPoint - lowerHemisphereOrig).Length()) {
-				//Debug::Print("here2-", Vector2(20.0f, 10.0f));
-				return false;
-			}
-			//Debug::Print("here2", Vector2(10.0f, 10.0f));
-			return true;
-		}
-		else {
-			Vector3 pointD = origin + up * Vector3::Dot(planeIntersectionPoint - origin, up);
-			if (volume.GetRadius() < (pointD, planeIntersectionPoint).Length()) {
-				//Debug::Print("here3-", Vector2(20.0f, 10.0f));
-				return false;
-			}
-			//Debug::Print("here3", Vector2(10.0f, 10.0f));
-			return true;
-		}
-	}
-	else {
-		return false;
-	}
+	//Vector3 planeNormal = (tempRay.GetPosition() - origin).Normalised();
+	//Plane rayCapsuleOrigPlane(planeNormal, origin.Length());
+	//if (RayPlaneIntersection(tempRay, rayCapsuleOrigPlane, planeIntersectCollision)) {
+	//	Vector3 planeIntersectionPoint = planeIntersectCollision.collidedAt;
+	//	if (planeIntersectCollision.collidedAt[1] >= hemisphereOrigDist) {
+	//		if (volume.GetRadius() < (planeIntersectionPoint - upperHemisphereOrig).Length()) {
+	//			//Debug::Print("here1-", Vector2(20.0f, 10.0f));
+	//			return false;
+	//		}
+	//		//Debug::Print("here1", Vector2(10.0f, 10.0f));
+	//		return true;
+	//	}
+	//	else if (planeIntersectionPoint[1] <= -hemisphereOrigDist) {
+	//		if (volume.GetRadius() < (planeIntersectionPoint - lowerHemisphereOrig).Length()) {
+	//			//Debug::Print("here2-", Vector2(20.0f, 10.0f));
+	//			return false;
+	//		}
+	//		//Debug::Print("here2", Vector2(10.0f, 10.0f));
+	//		return true;
+	//	}
+	//	else {
+	//		Vector3 pointD = origin + up * Vector3::Dot(planeIntersectionPoint - origin, up);
+	//		if (volume.GetRadius() < (pointD, planeIntersectionPoint).Length()) {
+	//			//Debug::Print("here3-", Vector2(20.0f, 10.0f));
+	//			return false;
+	//		}
+	//		//Debug::Print("here3", Vector2(10.0f, 10.0f));
+	//		return true;
+	//	}
+	//}
+	//else {
+	//	return false;
+	//}
 }
 
 bool CollisionDetection::RaySphereIntersection(const Ray&r, const Transform& worldTransform, const SphereVolume& volume, RayCollision& collision) {
