@@ -141,14 +141,14 @@ bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& w
 	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
 		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
 
-	Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 50.0f);
-	Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 50.0f);
+	//Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 50.0f);
+	//Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 50.0f);
 
-	Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 50.0f);
-	Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 50.0f);
+	//Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 50.0f);
+	//Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 50.0f);
 
-	Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 50.0f);
-	Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 50.0f);
+	//Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 50.0f);
+	//Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 50.0f);
 
 
 
@@ -160,27 +160,27 @@ bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& w
 		Vector3 planeIntersectionPoint = planeIntersectCollision.collidedAt;
 		if (planeIntersectCollision.collidedAt[1] >= hemisphereOrigDist) {
 			if (volume.GetRadius() < (planeIntersectionPoint - upperHemisphereOrig).Length()) {
-				Debug::Print("here1-", Vector2(20.0f, 10.0f));
+				//Debug::Print("here1-", Vector2(20.0f, 10.0f));
 				return false;
 			}
-			Debug::Print("here1", Vector2(10.0f, 10.0f));
+			//Debug::Print("here1", Vector2(10.0f, 10.0f));
 			return true;
 		}
 		else if (planeIntersectionPoint[1] <= -hemisphereOrigDist) {
 			if (volume.GetRadius() < (planeIntersectionPoint - lowerHemisphereOrig).Length()) {
-				Debug::Print("here2-", Vector2(20.0f, 10.0f));
+				//Debug::Print("here2-", Vector2(20.0f, 10.0f));
 				return false;
 			}
-			Debug::Print("here2", Vector2(10.0f, 10.0f));
+			//Debug::Print("here2", Vector2(10.0f, 10.0f));
 			return true;
 		}
 		else {
 			Vector3 pointD = origin + up * Vector3::Dot(planeIntersectionPoint - origin, up);
 			if (volume.GetRadius() < (pointD, planeIntersectionPoint).Length()) {
-				Debug::Print("here3-", Vector2(20.0f, 10.0f));
+				//Debug::Print("here3-", Vector2(20.0f, 10.0f));
 				return false;
 			}
-			Debug::Print("here3", Vector2(10.0f, 10.0f));
+			//Debug::Print("here3", Vector2(10.0f, 10.0f));
 			return true;
 		}
 	}

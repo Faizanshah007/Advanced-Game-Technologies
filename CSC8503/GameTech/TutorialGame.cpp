@@ -245,7 +245,7 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	InitGameExamples();
 	InitDefaultFloor();
 }
@@ -397,8 +397,8 @@ void TutorialGame::InitDefaultFloor() {
 
 void TutorialGame::InitGameExamples() {
 	AddPlayerToWorld(Vector3(0, 5, 0));
-	//AddEnemyToWorld(Vector3(5, 5, 0));
-	//AddBonusToWorld(Vector3(10, 5, 0));
+	AddEnemyToWorld(Vector3(5, 5, 0));
+	AddBonusToWorld(Vector3(10, 5, 0));
 }
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
