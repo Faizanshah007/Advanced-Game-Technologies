@@ -4,12 +4,12 @@
 using namespace NCL;
 using namespace CSC8503;
 
-PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume)	{
+PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, const float& elasticityValue)	{
 	transform	= parentTransform;
 	volume		= parentVolume;
 
 	inverseMass = 1.0f;
-	elasticity	= 0.8f;
+	elasticity	= elasticityValue;
 	friction	= 0.8f;
 }
 

@@ -171,6 +171,12 @@ namespace NCL {
 				o << "Vector3(" << v.x << "," << v.y << "," << v.z << ")" << std::endl;
 				return o;
 			}
+
+			inline friend Vector3 ProjectPointOntoVector(Vector3 A, Vector3 B, Vector3 pointC) {
+				Vector3 AB = B - A;
+				Vector3 AC = pointC - A;
+				return (A + AB*Dot(AC,AB)/Dot(AB,AB));
+			}
 		};
 	}
 }

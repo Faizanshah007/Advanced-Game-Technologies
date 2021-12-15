@@ -1,1 +1,35 @@
-Tutorial 2
+--Physics
+
+
+-Collision Detection
+2) If you do add capsules, you might then want to think about adding the ability to sweep a bounding
+volume - just try it with spheres for now, and test it by firing spheres at high speed towards a very
+thin wall; you should be able to create a scenario where the spheres will sometimes bounce through,
+unless swept spheres are used.
+
+-Collision Response
+2) The current ImpulseResolveCollision uses a combination of the projection and impulse methods to
+maintain the consistency of the objects in the scene. This tutorial also discussed the ideal of using
+a spring calculation to change the accelerations of the objects, rather than position or velocity. Try
+making a ResolveSpringCollision method which uses Hooke’s spring calculations to move the objects
+- remember that a spring has a resting length, and a spring coefficient to indicate how quickly the
+spring should ’snap’ back to its resting length when stretched or compressed.
+
+-Constraints and Solver
+1) The code so far only provides a single ’position constraint’ type. Try adding in an additional con-
+straint that also constrains the orientation of the two attached objects. Doing so should then be able
+to limit the ability to spin around the cubes freely by adding forces to them; the torque will instead
+be spread out throughout the entire rope bridge.
+2) Another variation of constraint can be something which purposefully adds force and torque, as
+a motor effect. This should be able to be achieved as a slight modification of the position constraint
+(for linear motion) or the above orientation constraint (for angular motion) to modify the distance
+check to add on an offset, and calculating a new normal value to where the object should be moving
+to / facing towards.
+3) As well as persistent constraints, its also possible to make temporary ones that fulfil some pur-
+pose and are then removed. We can use this to provide a collision resolution constraint, that replaces
+the current ImpulseResolveCollision method with the adding of a ResolutionConstraint to the
+PhysicsSystem. You’ll need to add some method of determining when a constraint should be re-
+moved from the system (in this case, when there’s no collision between the objects any more), and a
+new class to represent a constraint that will calculate the correct impulses to separate out the objects
+such that momentum remains conserved.
+

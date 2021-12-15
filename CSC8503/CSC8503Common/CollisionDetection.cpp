@@ -143,37 +143,60 @@ float InigoCapsule(Vector3 rayOrigin, Vector3 RayDirection,
 }
 
 bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& worldTransform, const CapsuleVolume& volume, RayCollision& collision) {
-	
+
 	Quaternion orientation = worldTransform.GetOrientation();
 	Vector3 position = worldTransform.GetPosition();
 
 	Matrix3 transform = Matrix3(orientation);
+	Matrix3 invTransform = Matrix3(orientation.Conjugate());
 
-	Vector3 up = Vector3(0, 1, 0);
-	Vector3 origin = Vector3(0, 0, 0);
+	/*Matrix4 local = worldTransformA.GetMatrix();
+	local.SetPositionVector({ 0, 0, 0 });*/
+	Vector3 origin = worldTransform.GetPosition();
+	Vector3 up = invTransform * Vector4(0, 1, 0, 1.0f);
+
+	
+	float adjustedRadius = volume.GetRadius();// *2.5f;
+	float adjustedHalfHeight = volume.GetHalfHeight();// / 1.7f;
+
+	Vector3 adjustedTop(origin + up * adjustedHalfHeight), adjustedBottom(origin - up * adjustedHalfHeight);
+
+	/*Vector3 right = invTransform * Vector4(1, 0, 0, 1.0f);
+	float capsuleRadius = volume.GetRadius();
+	float hemisphereOrigDist = (volume.GetHalfHeight() - capsuleRadius);
+
+	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
+		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
 
 	Vector3 top(origin + up * volume.GetHalfHeight()),
-		bottom(origin - up * volume.GetHalfHeight());
+		bottom(origin - up * volume.GetHalfHeight()),
+		leftEnd(origin - right * capsuleRadius),
+		rightEnd(origin + right * capsuleRadius);
+
+	Debug::DrawLine(upperHemisphereOrig, top, Debug::YELLOW, 1.0f);
+	Debug::DrawLine(lowerHemisphereOrig, bottom, Debug::RED, 1.0f);
+	Debug::DrawLine(leftEnd, rightEnd, Debug::BLUE, 1.0f);*/
 
 	float rayDist = InigoCapsule(r.GetPosition(), r.GetDirection(),
-		transform * top + position, transform * bottom + position, volume.GetRadius());
+		adjustedTop, adjustedBottom, adjustedRadius);
 
 	if (rayDist == -1.0f) return false;
 	
 	collision.rayDistance = rayDist;
 	collision.collidedAt = r.GetPosition() + r.GetDirection() * rayDist;
 
-	/*Debug::DrawLine(r.GetPosition(), collision.collidedAt, Debug::CYAN, 50.0f);
+	/*std::cout << rayDist << std::endl;
+	Debug::DrawLine(r.GetPosition(), collision.collidedAt, Debug::CYAN, 5.0f);
 	float hemisphereOrigDist = (volume.GetHalfHeight() - volume.GetRadius());
 	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
 		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
-	Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 50.0f);
-	Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 50.0f);
-	Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 50.0f);
-	Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 50.0f);
+	Debug::DrawLine(position, transform * upperHemisphereOrig + position, Debug::RED, 5.0f);
+	Debug::DrawLine(transform * upperHemisphereOrig + position, transform * (up*volume.GetRadius()) + position, Debug::GREEN, 5.0f);
+	Debug::DrawLine(position, transform * lowerHemisphereOrig + position, Debug::YELLOW, 5.0f);
+	Debug::DrawLine(transform * lowerHemisphereOrig + position, transform * (-up * volume.GetRadius()) + position, Debug::WHITE, 5.0f);
 	Vector3 right = Vector3(1, 0, 0);
-	Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 50.0f);
-	Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 50.0f);*/
+	Debug::DrawLine(position, transform * (right * volume.GetRadius()) + position, Debug::BLACK, 5.0f);
+	Debug::DrawLine(position, transform * (-right * volume.GetRadius()) + position, Debug::BLUE, 5.0f);*/
 
 	return true;
 
@@ -456,28 +479,126 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 		return SphereCapsuleIntersection((CapsuleVolume&)*volB, transformB, (SphereVolume&)*volA, transformA, collisionInfo);
 	}
 
+	if (volA->type == VolumeType::Capsule && volB->type == VolumeType::AABB) {
+		return AABBCapsuleIntersection((CapsuleVolume&)*volA, transformA, (AABBVolume&)*volB, transformB, collisionInfo);
+	}
+	if (volA->type == VolumeType::AABB && volB->type == VolumeType::Capsule) {
+		collisionInfo.a = b;
+		collisionInfo.b = a;
+		return AABBCapsuleIntersection((CapsuleVolume&)*volB, transformB, (AABBVolume&)*volA, transformA, collisionInfo);
+	}
+
 	return false;
 }
 
 bool CollisionDetection::AABBTest(const Vector3& posA, const Vector3& posB, const Vector3& halfSizeA, const Vector3& halfSizeB) {
+	Vector3 delta = posB - posA;
+	Vector3 totalSize = halfSizeA + halfSizeB;
+
+	if (abs(delta.x) < totalSize.x &&
+		abs(delta.y) < totalSize.y &&
+		abs(delta.z) < totalSize.z) {
+		return true;
+	}
 	return false;
 }
 
 //AABB/AABB Collisions
 bool CollisionDetection::AABBIntersection(const AABBVolume& volumeA, const Transform& worldTransformA,
 	const AABBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	
+	Vector3 boxAPos = worldTransformA.GetPosition();
+	Vector3 boxBPos = worldTransformB.GetPosition();
+
+	Vector3 boxASize = volumeA.GetHalfDimensions();
+	Vector3 boxBSize = volumeB.GetHalfDimensions();
+
+	bool overlap = AABBTest(boxAPos, boxBPos, boxASize, boxBSize);
+
+	if (overlap) {
+		static const Vector3 faces[6] =
+		{
+			Vector3(-1, 0, 0), Vector3(1, 0, 0),
+			Vector3(0, -1, 0), Vector3(0, 1, 0),
+			Vector3(0, 0, -1), Vector3(0, 0, 1),
+		};
+
+		Vector3 maxA = boxAPos + boxASize;
+		Vector3 minA = boxAPos - boxASize;
+
+		Vector3 maxB = boxBPos + boxBSize;
+		Vector3 minB = boxBPos - boxBSize;
+
+		float distances[6] =
+		{
+			(maxB.x - minA.x),// distance of box ’b’ to ’left’ of ’a’.
+			(maxA.x - minB.x),// distance of box ’b’ to ’right’ of ’a’.
+			(maxB.y - minA.y),// distance of box ’b’ to ’bottom ’ of ’a’.
+			(maxA.y - minB.y),// distance of box ’b’ to ’top’ of ’a’.
+			(maxB.z - minA.z),// distance of box ’b’ to ’far’ of ’a’.
+			(maxA.z - minB.z) // distance of box ’b’ to ’near’ of ’a’.
+		};
+		float penetration = FLT_MAX;
+		Vector3 bestAxis;
+
+		for (int i = 0; i < 6; i++)                                   
+		{
+			if (distances[i] < penetration) {
+				penetration = distances[i];
+				bestAxis = faces[i];
+			}
+		}
+		collisionInfo.AddContactPoint(Vector3(), Vector3(),
+			bestAxis, penetration);
+		return true;
+	}
 	return false;
 }
 
 //Sphere / Sphere Collision
 bool CollisionDetection::SphereIntersection(const SphereVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	float radii = volumeA.GetRadius() + volumeB.GetRadius();
+	Vector3 delta = worldTransformB.GetPosition() -	worldTransformA.GetPosition();
+	
+	float deltaLength = delta.Length();
+
+	if (deltaLength < radii) {
+		float penetration = (radii - deltaLength);
+
+		Vector3 normal = delta.Normalised();
+		Vector3 localA = normal * volumeA.GetRadius();
+		Vector3 localB = -normal * volumeB.GetRadius();
+
+		collisionInfo.AddContactPoint(localA, localB, normal, penetration);
+		return true;//we’re colliding!
+	}
 	return false;
 }
 
 //AABB - Sphere Collision
 bool CollisionDetection::AABBSphereIntersection(const AABBVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	Vector3 boxSize = volumeA.GetHalfDimensions();
+
+	Vector3 delta = worldTransformB.GetPosition() - worldTransformA.GetPosition();
+
+	Vector3 closestPointOnBox = Maths::Clamp(delta, -boxSize, boxSize);
+
+	Vector3 localPoint = delta - closestPointOnBox;
+	float distance = localPoint.Length();
+
+	if (distance < volumeB.GetRadius()) {//yes , we’re colliding!
+		Vector3 collisionNormal = localPoint.Normalised();
+		float penetration = (volumeB.GetRadius() - distance);
+
+		Vector3 localA = Vector3();
+		Vector3 localB = -collisionNormal * volumeB.GetRadius();
+
+		collisionInfo.AddContactPoint(localA, localB,
+			collisionNormal, penetration);
+		return true;
+	}
 	return false;
 }
 
@@ -490,5 +611,148 @@ bool CollisionDetection::OBBIntersection(
 bool CollisionDetection::SphereCapsuleIntersection(
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
-	return false;
+	
+	Quaternion orientation = worldTransformA.GetOrientation();
+	Vector3 position = worldTransformA.GetPosition();
+
+	Matrix3 transform = Matrix3(orientation);
+	Matrix3 invTransform = Matrix3(orientation.Conjugate());
+
+	/*Matrix4 local = worldTransformA.GetMatrix();
+	local.SetPositionVector({ 0, 0, 0 });*/
+	Vector3 origin = worldTransformA.GetPosition();
+	Vector3 up = invTransform * Vector4(0, 1, 0, 1.0f);
+	Vector3 right = invTransform * Vector4(1, 0, 0, 1.0f);
+
+	float capsuleRadius = volumeA.GetRadius();
+
+	float hemisphereOrigDist = (volumeA.GetHalfHeight() - capsuleRadius);
+
+	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
+		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
+
+	Vector3 top(origin + up * volumeA.GetHalfHeight()),
+		bottom(origin - up * volumeA.GetHalfHeight()),
+		leftEnd(origin - right * capsuleRadius),
+		rightEnd(origin + right * capsuleRadius);
+
+	//Debug::DrawLine(upperHemisphereOrig, top, Debug::YELLOW, 1.0f);
+	//Debug::DrawLine(lowerHemisphereOrig, bottom, Debug::RED, 1.0f);
+
+	Debug::DrawLine(top, bottom, Debug::WHITE, 1.0f);
+	Debug::DrawLine(leftEnd, rightEnd, Debug::BLUE, 1.0f);
+
+	Vector3 sphereOrigin = worldTransformB.GetPosition();
+
+	bool result;
+	if (sphereOrigin[1] >= upperHemisphereOrig[1]) {
+		result = SphereIntersection(SphereVolume(capsuleRadius), Transform().SetPosition(upperHemisphereOrig), volumeB, worldTransformB, collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			std::cout << "Upper " << contactPoint.localA << std::endl;
+			contactPoint.localA += upperHemisphereOrig;
+			collisionInfo.AddContactPoint(contactPoint);
+			//Debug::DrawLine(Vector3(), transform * contactPoint.localA + position, Debug::RED, 10.0f);
+		}
+	}
+	else if (sphereOrigin[1] <= lowerHemisphereOrig[1]) {
+		result = SphereIntersection(SphereVolume(capsuleRadius), Transform().SetPosition(lowerHemisphereOrig), volumeB, worldTransformB, collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			std::cout << "Lower " << contactPoint.localA << std::endl;
+			contactPoint.localA += lowerHemisphereOrig;
+			collisionInfo.AddContactPoint(contactPoint);
+		}
+	}
+	else {
+		Vector3 capsuleSphereOrigin = ProjectPointOntoVector(lowerHemisphereOrig, upperHemisphereOrig, sphereOrigin);
+		result = SphereIntersection(SphereVolume(capsuleRadius), Transform().SetPosition(capsuleSphereOrigin), volumeB, worldTransformB, collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			std::cout << "Middle " << contactPoint.localA << std::endl;
+			contactPoint.localA += capsuleSphereOrigin;
+			collisionInfo.AddContactPoint(contactPoint);
+		}
+	}
+	return result;
+}
+
+bool CollisionDetection::AABBCapsuleIntersection(
+	const CapsuleVolume& volumeA, const Transform& worldTransformA,
+	const AABBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+
+	Quaternion orientation = worldTransformA.GetOrientation();
+	Vector3 position = worldTransformA.GetPosition();
+
+	Matrix3 transform = Matrix3(orientation);
+	Matrix3 invTransform = Matrix3(orientation.Conjugate());
+
+	/*Matrix4 local = worldTransformA.GetMatrix();
+	local.SetPositionVector({ 0, 0, 0 });*/
+	Vector3 origin = worldTransformA.GetPosition();
+	Vector3 up = invTransform * Vector4(0, 1, 0, 1.0f);
+	Vector3 right = invTransform * Vector4(1, 0, 0, 1.0f);
+
+	float capsuleRadius = volumeA.GetRadius();
+
+	float hemisphereOrigDist = (volumeA.GetHalfHeight() - capsuleRadius);
+
+	Vector3 upperHemisphereOrig(origin + up * hemisphereOrigDist),
+		lowerHemisphereOrig(origin - up * hemisphereOrigDist);
+
+	Vector3 top(origin + up * volumeA.GetHalfHeight()),
+		bottom(origin - up * volumeA.GetHalfHeight()),
+		leftEnd(origin - right * capsuleRadius),
+		rightEnd(origin + right * capsuleRadius);
+
+	Debug::DrawLine(top, bottom, Debug::WHITE, 1.0f);
+	//Debug::DrawLine(upperHemisphereOrig, top, Debug::YELLOW, 1.0f);
+	//Debug::DrawLine(lowerHemisphereOrig, bottom, Debug::RED, 1.0f);
+	Debug::DrawLine(leftEnd, rightEnd, Debug::BLUE, 1.0f);
+
+	Vector3 cubeOrigin = worldTransformB.GetPosition();
+
+	bool result;
+	if (cubeOrigin[1] >= upperHemisphereOrig[1]) {
+		result = AABBSphereIntersection(volumeB, worldTransformB, SphereVolume(capsuleRadius), Transform().SetPosition(upperHemisphereOrig), collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			contactPoint.localB += upperHemisphereOrig;
+			Vector3 temp = contactPoint.localB;
+			contactPoint.localB = contactPoint.localA;
+			contactPoint.localA = temp;
+			contactPoint.normal *= -1.0f;
+			std::cout << "Upper " << contactPoint.localA << std::endl;
+			collisionInfo.AddContactPoint(contactPoint);
+			//Debug::DrawLine(Vector3(), transform * contactPoint.localA + position, Debug::RED, 10.0f);
+		}
+	}
+	else if (cubeOrigin[1] <= lowerHemisphereOrig[1]) {
+		result = AABBSphereIntersection(volumeB, worldTransformB, SphereVolume(capsuleRadius), Transform().SetPosition(lowerHemisphereOrig), collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			contactPoint.localB += lowerHemisphereOrig;
+			Vector3 temp = contactPoint.localB;
+			contactPoint.localB = contactPoint.localA;
+			contactPoint.localA = temp;
+			contactPoint.normal *= -1.0f;
+			std::cout << "Lower " << contactPoint.localA << std::endl;
+			collisionInfo.AddContactPoint(contactPoint);
+		}
+	}
+	else {
+		Vector3 capsuleSphereOrigin = ProjectPointOntoVector(lowerHemisphereOrig, upperHemisphereOrig, cubeOrigin);
+		result = AABBSphereIntersection(volumeB, worldTransformB, SphereVolume(capsuleRadius), Transform().SetPosition(capsuleSphereOrigin), collisionInfo);
+		if (result) {
+			ContactPoint contactPoint = collisionInfo.GetContactPoint();
+			contactPoint.localB += capsuleSphereOrigin;
+			Vector3 temp = contactPoint.localB;
+			contactPoint.localB = contactPoint.localA;
+			contactPoint.localA = temp;
+			contactPoint.normal *= -1.0f;
+			std::cout << "Middle " << contactPoint.localA << std::endl;
+			collisionInfo.AddContactPoint(contactPoint);
+		}
+	}
+	return result;
 }

@@ -4,6 +4,7 @@
 #include "../../Plugins/OpenGLRendering/OGLShader.h"
 #include "../../Plugins/OpenGLRendering/OGLTexture.h"
 #include "../../Common/TextureLoader.h"
+#include "../CSC8503Common/PositionConstraint.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -48,6 +49,7 @@ void TutorialGame::InitialiseAssets() {
 	basicShader = new OGLShader("GameTechVert.glsl", "GameTechFrag.glsl");
 
 	InitCamera();
+	//InitWorldTest();
 	InitWorld();
 }
 
@@ -245,14 +247,51 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	BridgeConstraintTest();
+	BridgeConstraintTest(Vector3(0,0,-20));
+	AddSphereToWorld(Vector3(0, 20, -10), 10.0f,5.0f);
+
+	/*InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	InitGameExamples();
+	InitDefaultFloor();*/
+}
+
+void TutorialGame::InitWorldTest() {
+	world->ClearAndErase();
+	physics->Clear();
+
+	//InitMixedGridWorld(1, 1, 5.0f, 5.0f);
+	AddPlayerToWorld(Vector3(0, 5, 0));
 	InitDefaultFloor();
 }
 
-void TutorialGame::BridgeConstraintTest() {
+void TutorialGame::BridgeConstraintTest(const Vector3& bridgePos) {
+	Vector3 cubeSize = Vector3(8, 8, 8);
 
+	float invCubeMass = 1; //5//how heavy the middle pieces are
+	int numLinks = 10;
+	float maxDistance = 20; // constraint distance
+	float cubeDistance = 17; // distance between links
 
+	Vector3 startPos = bridgePos;//Vector3(0, 0, 0);
+
+	GameObject* start = AddCubeToWorld(startPos + Vector3(0, 0, 0)
+		, cubeSize, 0);
+	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks + 2)
+		* cubeDistance, 0, 0), cubeSize, 0);
+
+	GameObject* previous = start;
+
+	for (int i = 0; i < numLinks; ++i) {
+		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) *
+			cubeDistance, 0, 0), cubeSize, invCubeMass);
+		PositionConstraint* constraint = new PositionConstraint(previous,
+			block, maxDistance);
+		world->AddConstraint(constraint);
+		previous = block;
+	}
+	PositionConstraint* constraint = new PositionConstraint(previous, end, maxDistance);
+	world->AddConstraint(constraint);
 }
 
 /*
@@ -374,10 +413,11 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 
 			if (rand() % 2) {
 				AddCubeToWorld(position, cubeDims);
-				//AddSphereToWorld(position, sphereRadius,10.0f,true);
+				//AddSphereToWorld(position, sphereRadius);
 			}
 			else {
-				AddSphereToWorld(position, sphereRadius);
+				AddCubeToWorld(position, cubeDims);
+				//AddSphereToWorld(position, sphereRadius);
 			}
 		}
 	}
@@ -409,7 +449,8 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	GameObject* character = new GameObject("player");
 
 	//AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.85f, 0.3f) * meshSize);
-	CapsuleVolume* volume = new CapsuleVolume(meshSize*1.3f, meshSize*1.1f);
+	CapsuleVolume* volume = new CapsuleVolume(meshSize * 0.85f, meshSize * 0.5f); //Right Dimensions
+	//CapsuleVolume* volume = new CapsuleVolume(meshSize*0.55f, meshSize*0.5f);
 
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
@@ -512,7 +553,7 @@ bool TutorialGame::SelectObject() {
 			Ray ray = CollisionDetection::BuildRayFromMouse(*world->GetMainCamera());
 
 			RayCollision closestCollision;
-			if (world->Raycast(ray, closestCollision, false)) {
+			if (world->Raycast(ray, closestCollision, true)) {
 				selectionObject = (GameObject*)closestCollision.node;
 				selectionObject->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
 				return true;
@@ -580,7 +621,7 @@ line - after the third, they'll be able to twist under torque aswell.
 void TutorialGame::MoveSelectedObject() {
 	renderer->DrawString("Click Force:" + std::to_string(forceMagnitude),
 		Vector2(10, 20)); //Draw debug text at 10,20
-	forceMagnitude += Window::GetMouse()->GetWheelMovement() * 100.0f;
+	forceMagnitude += Window::GetMouse()->GetWheelMovement() * 10.0f;
 
 	if (!selectionObject) {
 		return;//we haven’t selected anything!

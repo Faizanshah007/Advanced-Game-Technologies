@@ -12,8 +12,12 @@ namespace NCL {
 
 		class PhysicsObject	{
 		public:
-			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume);
+			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, const float& elasticityValue = 0.08f);
 			~PhysicsObject();
+
+			float GetElasticity() const {
+				return elasticity;
+			}
 
 			Vector3 GetLinearVelocity() const {
 				return linearVelocity;

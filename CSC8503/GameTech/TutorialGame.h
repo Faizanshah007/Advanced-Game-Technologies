@@ -18,6 +18,7 @@ namespace NCL {
 			void UpdateKeys();
 
 			void InitWorld();
+			void InitWorldTest();
 
 			void InitGameExamples();
 
@@ -25,7 +26,7 @@ namespace NCL {
 			void InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing);
 			void InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
 			void InitDefaultFloor();
-			void BridgeConstraintTest();
+			void BridgeConstraintTest(const Vector3& bridgePos = Vector3());
 	
 			bool SelectObject();
 			void MoveSelectedObject();

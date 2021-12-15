@@ -39,6 +39,12 @@ namespace NCL {
 				point.penetration	= p;
 			}
 
+			void AddContactPoint(const ContactPoint& cp) {
+				point = cp;
+			}
+
+			ContactPoint GetContactPoint() { return point; }
+
 			//Advanced collision detection / resolution
 			bool operator < (const CollisionInfo& other) const {
 				size_t otherHash = (size_t)other.a->GetWorldID() + ((size_t)other.b->GetWorldID() << 32);
@@ -61,6 +67,10 @@ namespace NCL {
 		static bool SphereCapsuleIntersection(
 			const CapsuleVolume& volumeA, const Transform& worldTransformA,
 			const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo);
+
+		static bool AABBCapsuleIntersection(
+			const CapsuleVolume& volumeA, const Transform& worldTransformA,
+			const AABBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo);
 
 		//TODO ADD THIS PROPERLY
 		static bool RayBoxIntersection(const Ray&r, const Vector3& boxPos, const Vector3& boxSize, RayCollision& collision);
