@@ -247,13 +247,13 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	BridgeConstraintTest();
-	BridgeConstraintTest(Vector3(0,0,-20));
-	AddSphereToWorld(Vector3(0, 20, -10), 10.0f,5.0f);
+	/*BridgeConstraintTest();
+	BridgeConstraintTest(Vector3(0,0,-25));
+	AddSphereToWorld(Vector3(0, 20, -10), 10.0f,5.0f);*/
 
-	/*InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	InitGameExamples();
-	InitDefaultFloor();*/
+	InitDefaultFloor();
 }
 
 void TutorialGame::InitWorldTest() {
@@ -261,7 +261,8 @@ void TutorialGame::InitWorldTest() {
 	physics->Clear();
 
 	//InitMixedGridWorld(1, 1, 5.0f, 5.0f);
-	AddPlayerToWorld(Vector3(0, 5, 0));
+	//AddPlayerToWorld(Vector3(0, 5, 0));
+	AddSphereToWorld(Vector3(0, 20, -10), 10.0f);
 	InitDefaultFloor();
 }
 
@@ -271,7 +272,7 @@ void TutorialGame::BridgeConstraintTest(const Vector3& bridgePos) {
 	float invCubeMass = 1; //5//how heavy the middle pieces are
 	int numLinks = 10;
 	float maxDistance = 20; // constraint distance
-	float cubeDistance = 17; // distance between links
+	float cubeDistance = 30; // distance between links
 
 	Vector3 startPos = bridgePos;//Vector3(0, 0, 0);
 
@@ -303,11 +304,13 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
 	GameObject* floor = new GameObject("floor");
 
 	Vector3 floorSize	= Vector3(100, 2, 100);
+	//OBBVolume* volume	= new OBBVolume(floorSize);
 	AABBVolume* volume	= new AABBVolume(floorSize);
 	floor->SetBoundingVolume((CollisionVolume*)volume);
 	floor->GetTransform()
 		.SetScale(floorSize * 2)
 		.SetPosition(position);
+		//.SetOrientation(Quaternion(Matrix3::Rotation(20, Vector3(1,0,0))));
 
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
 	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume()));
@@ -413,11 +416,9 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 
 			if (rand() % 2) {
 				AddCubeToWorld(position, cubeDims);
-				//AddSphereToWorld(position, sphereRadius);
 			}
 			else {
-				AddCubeToWorld(position, cubeDims);
-				//AddSphereToWorld(position, sphereRadius);
+				AddSphereToWorld(position, sphereRadius);
 			}
 		}
 	}
@@ -434,6 +435,7 @@ void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing,
 
 void TutorialGame::InitDefaultFloor() {
 	AddFloorToWorld(Vector3(0, -2, 0));
+	//AddFloorToWorld(Vector3(0, -40, 0));
 }
 
 void TutorialGame::InitGameExamples() {

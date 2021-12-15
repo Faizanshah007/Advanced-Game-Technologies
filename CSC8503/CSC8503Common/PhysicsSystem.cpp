@@ -21,7 +21,7 @@ and the forces that are added to objects to change those positions
 
 PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g)	{
 	applyGravity	= false;
-	useBroadPhase	= false;	
+	useBroadPhase	= true;// false;
 	dTOffset		= 0.0f;
 	globalDamping	= 0.995f;
 	SetGravity(Vector3(0.0f, -9.8f, 0.0f));
@@ -265,6 +265,25 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	float j = (-(1.0f + cRestitution) * impulseForce) /
 		(totalMass + angularEffect);
 
+
+	//Vector3 t = contactVelocity - (p.normal * Vector3::Dot(contactVelocity, p.normal));
+	//Debug::DrawLine(transformA.GetPosition(), t * 100.0f, Debug::RED, 1.0f);
+
+	//float impulseForcet = Vector3::Dot(contactVelocity, t);
+
+	////now to work out the effect of inertia ....
+	//Vector3 inertiaAt = Vector3::Cross(physA->GetInertiaTensor() *
+	//	Vector3::Cross(relativeA, t), relativeA);
+	//Vector3 inertiaBt = Vector3::Cross(physB->GetInertiaTensor() *
+	//	Vector3::Cross(relativeB, t), relativeB);
+	//float angularEffectt = Vector3::Dot(inertiaA + inertiaB, t);
+
+	//float mu = 1;//physA->GetFriction() * physB->GetFriction();// 0.66f; // disperse some kinectic energy
+
+	//float jt =  -(mu * impulseForcet) /
+	//	(totalMass + angularEffectt);
+
+
 	Vector3 fullImpulse = p.normal * j;
 
 	physA->ApplyLinearImpulse(-fullImpulse);
@@ -272,6 +291,9 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 
 	physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -fullImpulse));
 	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, fullImpulse));
+
+	/*physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -t*jt) * 0.08f);
+	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, t*jt)*0.08f);*/
 }
 
 
@@ -285,7 +307,34 @@ compare the collisions that we absolutely need to.
 */
 
 void PhysicsSystem::BroadPhase() {
+	broadphaseCollisions.clear();
+	QuadTree <GameObject*> tree(Vector2(1024, 1024), 7, 6);
 
+	std::vector <GameObject*>::const_iterator first;
+	std::vector <GameObject*>::const_iterator last;
+	gameWorld.GetObjectIterators(first, last);
+	for (auto i = first; i != last; ++i) {
+		Vector3 halfSizes;
+		if (!(*i)->GetBroadphaseAABB(halfSizes)) {
+			continue;
+		}
+		Vector3 pos = (*i)->GetTransform().GetPosition();
+		tree.Insert(*i, pos, halfSizes);
+	}
+
+	tree.OperateOnContents(
+		[&](std::list <QuadTreeEntry <GameObject*>>& data) {
+			CollisionDetection::CollisionInfo info;
+			for (auto i = data.begin(); i != data.end(); ++i) {
+				for (auto j = std::next(i); j != data.end(); ++j) {
+					// is this pair of items already in the collision set -
+					//if the same pair is in another quadtree node together etc
+					info.a = min((*i).object, (*j).object);
+					info.b = max((*i).object, (*j).object);
+					broadphaseCollisions.insert(info);
+				}
+			}
+		});
 }
 
 /*
@@ -294,7 +343,16 @@ The broadphase will now only give us likely collisions, so we can now go through
 and work out if they are truly colliding, and if so, add them into the main collision list
 */
 void PhysicsSystem::NarrowPhase() {
-
+	for (std::set<CollisionDetection::CollisionInfo>::iterator
+		i = broadphaseCollisions.begin();
+		i != broadphaseCollisions.end(); ++i) {
+		CollisionDetection::CollisionInfo info = *i;
+		if (CollisionDetection::ObjectIntersection(info.a, info.b, info)) {
+			info.framesLeft = numCollisionFrames;
+			ImpulseResolveCollision(*info.a, *info.b, info.point);
+			allCollisions.insert(info); // insert into our main set
+		}
+	}
 }
 
 /*

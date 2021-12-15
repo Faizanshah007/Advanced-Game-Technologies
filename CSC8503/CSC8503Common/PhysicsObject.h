@@ -19,6 +19,10 @@ namespace NCL {
 				return elasticity;
 			}
 
+			float GetFriction() const {
+				return friction;
+			}
+
 			Vector3 GetLinearVelocity() const {
 				return linearVelocity;
 			}
