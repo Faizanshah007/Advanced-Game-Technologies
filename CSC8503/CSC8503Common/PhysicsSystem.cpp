@@ -267,7 +267,7 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 
 
 	//Vector3 t = contactVelocity - (p.normal * Vector3::Dot(contactVelocity, p.normal));
-	//Debug::DrawLine(transformA.GetPosition(), t * 100.0f, Debug::RED, 1.0f);
+	//Debug::DrawLine(transformB.GetPosition(), t * 100.0f, Debug::RED, 1.0f);
 
 	//float impulseForcet = Vector3::Dot(contactVelocity, t);
 
@@ -278,10 +278,10 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	//	Vector3::Cross(relativeB, t), relativeB);
 	//float angularEffectt = Vector3::Dot(inertiaA + inertiaB, t);
 
-	//float mu = 1;//physA->GetFriction() * physB->GetFriction();// 0.66f; // disperse some kinectic energy
+	float mu = physA->GetFriction() * physB->GetFriction();// 0.66f; // disperse some kinectic energy
 
-	//float jt =  -(mu * impulseForcet) /
-	//	(totalMass + angularEffectt);
+	/*float jt =  -(mu * impulseForcet) /
+		(totalMass + angularEffectt);*/
 
 
 	Vector3 fullImpulse = p.normal * j;
@@ -292,8 +292,12 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -fullImpulse));
 	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, fullImpulse));
 
-	/*physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -t*jt) * 0.08f);
-	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, t*jt)*0.08f);*/
+	/*physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -t*jt));
+	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, t*jt));*/
+
+	/*if (mu > 0.0f) {
+		physB->SetAngularVelocity(Vector3::Cross(physA->GetLinearVelocity(), Vector3(0,-1,0)).Normalised() * 10.0f);
+	}*/
 }
 
 

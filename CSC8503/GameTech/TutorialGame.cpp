@@ -50,7 +50,8 @@ void TutorialGame::InitialiseAssets() {
 
 	InitCamera();
 	//InitWorldTest();
-	InitWorld();
+	//InitWorld();
+	Lvl1();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -82,7 +83,7 @@ void TutorialGame::UpdateGame(float dt) {
 	else {
 		Debug::Print("(G)ravity off", Vector2(5, 95));
 	}
-
+	//spinningCapsule->GetPhysicsObject()->SetAngularVelocity(Vector3(0, 10, 0));
 	SelectObject();
 	//RayCastFromObject();
 	MoveSelectedObject();
@@ -260,10 +261,43 @@ void TutorialGame::InitWorldTest() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(1, 1, 5.0f, 5.0f);
-	//AddPlayerToWorld(Vector3(0, 5, 0));
-	AddSphereToWorld(Vector3(0, 20, -10), 10.0f);
 	InitDefaultFloor();
+	AddSphereToWorld(Vector3(), 2.0f);
+}
+
+void TutorialGame::Lvl1() {
+	world->ClearAndErase();
+	physics->Clear();
+
+	//InitMixedGridWorld(1, 1, 5.0f, 5.0f);
+	//AddPlayerToWorld(Vector3(5, 5, 0));
+	
+	AddCubeToWorld(Vector3(5,15,0), Vector3(1, 1, 1));
+	spinningCapsule = AddCapsuleToWorld(Vector3(5, 5, 0), 2.0f, 1.0f,0.0f);
+	spinningCapsule->GetTransform().SetOrientation(Quaternion(Matrix3::Rotation(90, Vector3(0, 0, 1))));
+	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	Vector3 baseFloorSize = Vector3(200, 4, 200);
+	Vector3 slidingFloorSize = baseFloorSize / Vector3(1,1,4);
+	GameObject* baseFloor = AddFloorToWorld(Vector3(0, -2, 0), baseFloorSize);
+	baseFloor->GetPhysicsObject()->SetElasticity(0.8f);
+	AddFloorToWorld(Vector3(0, -2, 0) + Vector3(baseFloorSize.x - 25,68,-75), slidingFloorSize, Quaternion(Matrix3::Rotation(40, Vector3(0,0,1))), true)
+		->GetPhysicsObject()->SetElasticity(0.8f);
+
+
+	GameObject* swingHook = AddSphereToWorld(Vector3(baseFloorSize.x / 2.5f, 15, -baseFloorSize.z / 2.5f), 1.0f, 0.0f);
+
+	swingCapsule = AddCapsuleToWorld(Vector3(baseFloorSize.x / 2.1f, 5, -baseFloorSize.z / 2.1f), 10.0f, 4.0f,0.0f);
+	swingCapsule->GetTransform().SetOrientation(Quaternion(Matrix3::Rotation(90, Vector3(0, 0, 1))));
+	
+	PositionConstraint* constraint = new PositionConstraint(swingHook,
+		swingCapsule, 10.0f);
+
+	world->AddConstraint(constraint);
+
+	playerBall = AddSphereToWorld(Vector3(baseFloorSize.x - 29, 100, -75), 5.0f,100.0f);
+	playerBall->GetPhysicsObject()->SetElasticity(1.0f);
+
+	//AddCubeToWorld(Vector3(), Vector3(100, 2, 100), 0.0f)->GetPhysicsObject()->SetElasticity(10.0f);
 }
 
 void TutorialGame::BridgeConstraintTest(const Vector3& bridgePos) {
@@ -300,16 +334,23 @@ void TutorialGame::BridgeConstraintTest(const Vector3& bridgePos) {
 A single function to add a large immoveable cube to the bottom of our world
 
 */
-GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, const Vector3& floorSize, const Quaternion orientation, const bool& isOBB) {
 	GameObject* floor = new GameObject("floor");
 
-	Vector3 floorSize	= Vector3(100, 2, 100);
-	//OBBVolume* volume	= new OBBVolume(floorSize);
-	AABBVolume* volume	= new AABBVolume(floorSize);
-	floor->SetBoundingVolume((CollisionVolume*)volume);
+	//Vector3 floorSize	= Vector3(100, 2, 100) * 2;
+	if (isOBB) {
+		OBBVolume* volume = new OBBVolume(floorSize / 2.0f);
+		floor->SetBoundingVolume((CollisionVolume*)volume);
+	}
+	else {
+		AABBVolume* volume = new AABBVolume(floorSize / 2.0f);
+		floor->SetBoundingVolume((CollisionVolume*)volume);
+	}
+
 	floor->GetTransform()
-		.SetScale(floorSize * 2)
-		.SetPosition(position);
+		.SetScale(floorSize)
+		.SetPosition(position)
+		.SetOrientation(orientation);
 		//.SetOrientation(Quaternion(Matrix3::Rotation(20, Vector3(1,0,0))));
 
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
@@ -321,6 +362,28 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
 	world->AddGameObject(floor);
 
 	return floor;
+}
+
+GameObject* TutorialGame::AddWallToWorld(const Vector3& position, const Vector3& wallSize) {
+	GameObject* wall = new GameObject("wall");
+
+	AABBVolume* volume = new AABBVolume(wallSize / 2.0f);
+	
+	wall->SetBoundingVolume((CollisionVolume*)volume);
+
+	wall->GetTransform()
+		.SetScale(wallSize)
+		.SetPosition(position);
+
+	wall->SetRenderObject(new RenderObject(&wall->GetTransform(), cubeMesh, basicTex, basicShader));
+	wall->SetPhysicsObject(new PhysicsObject(&wall->GetTransform(), wall->GetBoundingVolume()));
+
+	wall->GetPhysicsObject()->SetInverseMass(0);
+	wall->GetPhysicsObject()->InitCubeInertia();
+
+	world->AddGameObject(wall);
+
+	return wall;
 }
 
 /*

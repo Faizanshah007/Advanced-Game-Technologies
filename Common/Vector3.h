@@ -175,7 +175,10 @@ namespace NCL {
 			inline friend Vector3 ProjectPointOntoVector(Vector3 A, Vector3 B, Vector3 pointC) {
 				Vector3 AB = B - A;
 				Vector3 AC = pointC - A;
-				return (A + AB*Dot(AC,AB)/Dot(AB,AB));
+				float t = Dot(AC, AB) / Dot(AB, AB);
+				//float saturated_t = std::min(std::max(t,0.0f), 1.0f);
+				//if (t != saturated_t) std::cout << "Dangerrr!!!!" << std::endl;
+				return (A + AB * t);
 			}
 		};
 	}

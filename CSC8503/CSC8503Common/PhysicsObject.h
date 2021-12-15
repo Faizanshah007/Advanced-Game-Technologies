@@ -19,6 +19,10 @@ namespace NCL {
 				return elasticity;
 			}
 
+			void SetElasticity(const float& elasticityValue) {
+				elasticity = elasticityValue;
+			}
+
 			float GetFriction() const {
 				return friction;
 			}

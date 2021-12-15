@@ -19,6 +19,7 @@ namespace NCL {
 
 			void InitWorld();
 			void InitWorldTest();
+			void Lvl1();
 
 			void InitGameExamples();
 
@@ -34,7 +35,8 @@ namespace NCL {
 			void DebugObjectMovement();
 			void LockedObjectMovement();
 
-			GameObject* AddFloorToWorld(const Vector3& position);
+			GameObject* AddFloorToWorld(const Vector3& position, const Vector3& floorSize = Vector3(200, 4, 200), const Quaternion orientation = Quaternion(), const bool& isOBB = false);
+			GameObject* AddWallToWorld(const Vector3& position, const Vector3& wallSize = Vector3(4,50,100));
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, bool isHollow = false);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
 			
@@ -73,6 +75,10 @@ namespace NCL {
 			void LockCameraToObject(GameObject* o) {
 				lockedObject = o;
 			}
+
+			GameObject* spinningCapsule;
+			GameObject* playerBall;
+			GameObject* swingCapsule;
 
 		};
 	}
