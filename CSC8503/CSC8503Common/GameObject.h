@@ -14,7 +14,9 @@ namespace NCL {
 
 		class GameObject	{
 		public:
-			GameObject(string name = "");
+			float specialValue;
+
+			GameObject(string name = "", bool canCollide = true);
 			~GameObject();
 
 			void SetBoundingVolume(CollisionVolume* vol) {
@@ -25,8 +27,20 @@ namespace NCL {
 				return boundingVolume;
 			}
 
+			bool CanCollide() const {
+				return !DoNotCollide;
+			}
+
 			bool IsActive() const {
 				return isActive;
+			}
+
+			void Deactivate() {
+				isActive = false;
+			}
+
+			void Activate() {
+				isActive = true;
 			}
 
 			Transform& GetTransform() {
@@ -53,6 +67,10 @@ namespace NCL {
 				return name;
 			}
 
+			void Rename(const string& newName) {
+				name = newName;
+			}
+
 			virtual void OnCollisionBegin(GameObject* otherObject) {
 				//std::cout << "OnCollisionBegin event occured!\n";
 			}
@@ -73,12 +91,16 @@ namespace NCL {
 				return worldID;
 			}
 
+			string state;
+
 		protected:
 			Transform			transform;
 
 			CollisionVolume*	boundingVolume;
 			PhysicsObject*		physicsObject;
 			RenderObject*		renderObject;
+
+			bool DoNotCollide;
 
 			bool	isActive;
 			int		worldID;

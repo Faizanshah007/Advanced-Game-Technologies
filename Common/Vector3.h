@@ -176,9 +176,8 @@ namespace NCL {
 				Vector3 AB = B - A;
 				Vector3 AC = pointC - A;
 				float t = Dot(AC, AB) / Dot(AB, AB);
-				//float saturated_t = std::min(std::max(t,0.0f), 1.0f);
-				//if (t != saturated_t) std::cout << "Dangerrr!!!!" << std::endl;
-				return (A + AB * t);
+				float saturated_t = std::min(std::max(t,0.0f), 1.0f);
+				return (A + AB * saturated_t);
 			}
 		};
 	}

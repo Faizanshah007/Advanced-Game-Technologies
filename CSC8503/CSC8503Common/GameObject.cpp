@@ -3,13 +3,16 @@
 
 using namespace NCL::CSC8503;
 
-GameObject::GameObject(string objectName)	{
+GameObject::GameObject(string objectName, bool canCollide)	{
 	name			= objectName;
 	worldID			= -1;
 	isActive		= true;
 	boundingVolume	= nullptr;
 	physicsObject	= nullptr;
 	renderObject	= nullptr;
+	state = "None";
+	DoNotCollide = !canCollide;
+	specialValue = 0.0f;
 }
 
 GameObject::~GameObject()	{

@@ -33,3 +33,34 @@ moved from the system (in this case, when there’s no collision between the objec
 new class to represent a constraint that will calculate the correct impulses to separate out the objects
 such that momentum remains conserved.
 
+-Spacial and Acc structure
+1) Spatial acceleration structures are useful for more than just the broadphase of your physics engine.
+They can also be used to speed up your raycasting - if a ray doesn’t intersect with the bounding box
+that represents an octree node, then it stands to reason that it cannot intersect any of the objects
+within it, potentially saving many ray intersection tests. Try to modify the Raycast methods intro-
+duced in the first tutorial to build a list of objects to test based on whether the ray intersects the
+nodes of your quadtree or octree.
+2) Spatial acceleration structures are useful outside of the scope of physics, too. We have learnt
+previously that we can speed up the rendering of the scene by performing frustum culling to build up
+a list of scene nodes that are within the viewpoint of the game camera. Consider how you would use
+plane intersection tests on the collision volumes of your quadtree or octree nodes to get a list of game
+objects to render.
+16
+3) The quadtree example outlined here is functional, but naive - there’s plenty of room for per-
+formance improvements! Consider storing a std::vector of discarded quadtree nodes between frames,
+and using those instead of calling new and delete every frame.
+4) Perhaps having a single acceleration structure built up every frame isn’t the best way to speed
+up the physics calculations - it’ll be repeating the same work every frame for the inclusion of all of
+your static objects (that is, ones with infinite mass that will never move, such as walls and the floor).
+Consider having two structures, one for the static objects, and one for the dynamic objects. You may
+need to then create a method in the QuadTree class that tries to determine which nodes a dynamic
+object intersects with, but rather than inserting it into the tree, just then calls a function on the
+contents of the node - allowing you to then run intersection code against just the shapes in the area
+of the object.
+
+
+--AI
+
+
+-
+

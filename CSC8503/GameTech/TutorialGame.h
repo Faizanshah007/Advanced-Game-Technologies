@@ -1,25 +1,32 @@
 #pragma once
 #include "GameTechRenderer.h"
 #include "../CSC8503Common/PhysicsSystem.h"
+#include "StateGameObject.h"
+#include "SpringCube.h"
+#include "Coin.h"
 
 namespace NCL {
 	namespace CSC8503 {
 		class TutorialGame		{
 		public:
-			TutorialGame();
+			TutorialGame(int level = 1);
 			~TutorialGame();
 
-			virtual void UpdateGame(float dt);
+			inline void togglePlaneMagic() { showPlaneMagic = !showPlaneMagic; }
+
+			virtual void UpdateGame(float dt, int mode);
 
 		protected:
-			void InitialiseAssets();
+			void InitialiseAssets(int level);
 
 			void InitCamera();
 			void UpdateKeys();
 
 			void InitWorld();
 			void InitWorldTest();
+			
 			void Lvl1();
+			void Lvl1Updates(float dt);
 
 			void InitGameExamples();
 
@@ -32,6 +39,7 @@ namespace NCL {
 			bool SelectObject();
 			void MoveSelectedObject();
 			bool RayCastFromObject();
+			void PlayWithPlane();
 			void DebugObjectMovement();
 			void LockedObjectMovement();
 
@@ -44,7 +52,8 @@ namespace NCL {
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
 			GameObject* AddEnemyToWorld(const Vector3& position);
-			GameObject* AddBonusToWorld(const Vector3& position);
+
+			Coin* AddBonusToWorld(const Vector3& position);
 
 			GameTechRenderer*	renderer;
 			PhysicsSystem*		physics;
@@ -77,8 +86,21 @@ namespace NCL {
 			}
 
 			GameObject* spinningCapsule;
+			GameObject* spinningCapsule2;
 			GameObject* playerBall;
 			GameObject* swingCapsule;
+			GameObject* test; // For testing
+
+			StateGameObject* AddStateObjectToWorld(const Vector3& position, const Vector3& dimensions = { 6, 6, 6 });
+			StateGameObject* blockingBlock1;
+			StateGameObject* blockingBlock2;
+
+			SpringCube*		 AddSpringCubeToWorld(const Vector3& position, const Vector3& dimensions, const Vector3& hingePosition, const float& k);
+			SpringCube*		 springBlock;
+
+			bool showPlaneMagic;
+
+			int gameLevel;
 
 		};
 	}
