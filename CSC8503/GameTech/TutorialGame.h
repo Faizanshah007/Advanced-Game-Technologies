@@ -4,6 +4,7 @@
 #include "StateGameObject.h"
 #include "SpringCube.h"
 #include "Coin.h"
+#include "WinningPad.h"
 
 namespace NCL {
 	namespace CSC8503 {
@@ -16,6 +17,9 @@ namespace NCL {
 
 			virtual void UpdateGame(float dt, int mode);
 
+			string gameState;
+			float score;
+
 		protected:
 			void InitialiseAssets(int level);
 
@@ -27,6 +31,8 @@ namespace NCL {
 			
 			void Lvl1();
 			void Lvl1Updates(float dt);
+
+			void Blank();
 
 			void InitGameExamples();
 
@@ -87,6 +93,7 @@ namespace NCL {
 
 			GameObject* spinningCapsule;
 			GameObject* spinningCapsule2;
+			GameObject* baseFloor;
 			GameObject* playerBall;
 			GameObject* swingCapsule;
 			GameObject* test; // For testing
@@ -97,6 +104,9 @@ namespace NCL {
 
 			SpringCube*		 AddSpringCubeToWorld(const Vector3& position, const Vector3& dimensions, const Vector3& hingePosition, const float& k);
 			SpringCube*		 springBlock;
+
+			WinningPad* AddWinningPadToWorld(const Vector3& position, const Vector3& dimensions);
+			WinningPad* winPad;
 
 			bool showPlaneMagic;
 

@@ -16,11 +16,13 @@ using namespace CSC8503;
 Window* w;
 TutorialGame* g;
 
+int reset;
+
 enum MyMenuOptions
 {
 	lvl1,
 	lvl2,
-	quit
+	quit,
 };
 
 int currentState = lvl1;
@@ -34,7 +36,6 @@ class PauseScreen : public PushdownState {
 			return PushdownResult::Pop;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
-			//if (g) g->~TutorialGame();
 			currentState = menuState;
 			switch (menuState)
 			{
@@ -65,11 +66,44 @@ class PauseScreen : public PushdownState {
 	}
 };
 
+class WinLoseScreen : public PushdownState {
+	PushdownResult OnUpdate(float dt,
+		PushdownState** newState) override {
+		Debug::Print(gameState, Vector2(50, 50),Debug::CYAN);
+		Debug::Print("Score: " + std::to_string(score), Vector2(50, 60), Debug::CYAN);
+		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
+			reset = -1;
+			return PushdownResult::Pop;
+		}
+		g->UpdateGame(dt, -1);
+		return PushdownResult::NoChange;
+	}
+	void OnAwake() override {
+		gameState = g->gameState;
+		score = g->score;
+		g = new TutorialGame(-1);
+	}
+protected:
+	string gameState;
+	float score;
+};
+
 class GameScreen : public PushdownState {
 	PushdownResult OnUpdate(float dt,
 		PushdownState** newState) override {
 		if (currentState == quit) {
 			return PushdownResult::Pop;
+		}
+
+		if (reset == -1) {
+			*newState = new PauseScreen();
+			reset = 0;
+			return PushdownResult::Push;
+		}
+
+		if (g->gameState == "Won" || g->gameState == "Lost") {
+			*newState = new WinLoseScreen();
+			return PushdownResult::Push;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
 			*newState = new PauseScreen();

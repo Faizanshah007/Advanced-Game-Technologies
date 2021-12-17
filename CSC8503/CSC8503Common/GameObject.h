@@ -91,6 +91,8 @@ namespace NCL {
 				return worldID;
 			}
 
+			virtual void Update() {}
+
 			string state;
 
 		protected:

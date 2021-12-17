@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="Coin.h" />
     <ClInclude Include="GameTechRenderer.h" />
+    <ClInclude Include="WinningPad.h" />
     <ClInclude Include="SpringCube.h" />
     <ClInclude Include="StateGameObject.h" />
     <ClInclude Include="TutorialGame.h" />

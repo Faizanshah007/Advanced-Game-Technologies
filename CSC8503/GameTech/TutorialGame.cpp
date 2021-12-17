@@ -20,6 +20,9 @@ TutorialGame::TutorialGame(int level)	{
 	showPlaneMagic	= false;
 
 	gameLevel = 0;
+	score = 0;
+
+	gameState = "InGame";
 
 	Debug::SetRenderer(renderer);
 
@@ -54,7 +57,8 @@ void TutorialGame::InitialiseAssets(int level) {
 	InitCamera();
 	//InitWorldTest();
 	if (level == 1) Lvl1();
-	else InitWorld();
+	else if (level == 2) InitWorld();
+	else if (level == -1) Blank();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -74,6 +78,22 @@ TutorialGame::~TutorialGame()	{
 }
 
 void TutorialGame::Lvl1Updates(float dt) {
+
+	if (winPad->specialValue == 1) {
+		gameState = "Won";
+		return;
+	}
+
+	if ((playerBall->GetTransform().GetPosition() - baseFloor->GetTransform().GetPosition()).Length() > 500.0f) {
+		gameState = "Lost";
+		return;
+	}
+
+	playerBall->GetRenderObject()->SetColour(Vector3(0, 1, 0));
+	spinningCapsule2->GetRenderObject()->SetColour(Vector3(0, 0, 0.8));
+	swingCapsule->GetRenderObject()->SetColour(Vector3(0, 0, 0.8));
+	springBlock->GetRenderObject()->SetColour(Vector3(0, 0, 0.8));
+
 	spinningCapsule->GetPhysicsObject()->SetAngularVelocity(Vector3(0, -3, 0));
 
 	swingCapsule->GetPhysicsObject()->SetAngularVelocity(Vector3());
@@ -99,7 +119,10 @@ void TutorialGame::Lvl1Updates(float dt) {
 		AddCubeToWorld(spinningCapsule2->GetTransform().GetPosition() + Vector3(-3, 20, 0), Vector3(2, 2, 2), 1000.0f);
 	}
 
-	Debug::Print("Score: " + std::to_string(playerBall->specialValue), Vector2(60, 25));
+	score = playerBall->specialValue;
+	Debug::Print("Score: " + std::to_string(score), Vector2(60, 25));
+
+	
 }
 
 void TutorialGame::UpdateGame(float dt, int mode) {
@@ -284,6 +307,11 @@ void TutorialGame::InitCamera() {
 	lockedObject = nullptr;
 }
 
+void TutorialGame::Blank() {
+	world->ClearAndErase();
+	physics->Clear();
+}
+
 void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
@@ -336,14 +364,17 @@ void TutorialGame::Lvl1() {
 	AddFloorToWorld(Vector3(0, -2, 0) + Vector3(baseFloorSize.x - 22, 68, -75), slidingFloorSize, Quaternion(Matrix3::Rotation(40, Vector3(0, 0, 1))), true);
 	//->GetPhysicsObject()->SetElasticity(0.0f);
 
-	GameObject* baseFloor = AddFloorToWorld(Vector3(0, -2, 0), baseFloorSize);
+	baseFloor = AddFloorToWorld(Vector3(0, -2, 0), baseFloorSize);
 	baseFloor->GetPhysicsObject()->SetElasticity(0.8f);
 	
 	GameObject* bumpyTile = AddFloorToWorld(Vector3((baseFloorSize.x - tileSize.x)/2.0f, 2.0f, -(baseFloorSize.z - tileSize.z)/2.0f), tileSize);
 	bumpyTile->GetPhysicsObject()->SetInverseMass(1.0f);
 	bumpyTile->GetPhysicsObject()->SetElasticity(1.5f);
 
-	AddBonusToWorld(bumpyTile->GetTransform().GetPosition() + Vector3(0, 5, 0));
+	winPad = AddWinningPadToWorld(Vector3(-(baseFloorSize.x - tileSize.x) / 2.0f - 50.0f, 47.0f, (baseFloorSize.z - tileSize.z) / 2.0f - 2.0f), tileSize + Vector3(0, 90, 0));
+
+	AddBonusToWorld(bumpyTile->GetTransform().GetPosition() + Vector3(0, 10, 0));
+	AddBonusToWorld(Vector3() + Vector3(0, 10, 0));
 
 	Vector3 wallSize(4, 50, 100);
 	Vector3 threeWallSize = wallSize / Vector3(1, 1, 2.0f / 3.0f);
@@ -351,7 +382,7 @@ void TutorialGame::Lvl1() {
 	
 	//Opp slide
 	//AddWallToWorld(Vector3(-baseFloorSize.x/2.0f, threeWallSize.y / 2.0f,-baseFloorSize.z/8.0f), threeWallSize);
-	AddWallToWorld(Vector3(-baseFloorSize.x / 1.9f, wallSize.y / 2.0f, baseFloorSize.z / 100.0f), wallSize);
+	AddWallToWorld(Vector3(-baseFloorSize.x / 1.9f, wallSize.y / 2.0f, baseFloorSize.z / 100.0f - 5.0f), wallSize);
 	//Near Slide
 	AddWallToWorld(Vector3(baseFloorSize.x / 1.9f, wallSize.y / 2.0f, baseFloorSize.z / 100.0f), wallSize);
 
@@ -450,6 +481,28 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, const Vector3
 	world->AddGameObject(floor);
 
 	return floor;
+}
+
+WinningPad* TutorialGame::AddWinningPadToWorld(const Vector3& position, const Vector3& wpSize) {
+	WinningPad* wp = new WinningPad();
+
+
+	AABBVolume* volume = new AABBVolume(wpSize / 2.0f);
+	wp->SetBoundingVolume((CollisionVolume*)volume);
+
+	wp->GetTransform()
+		.SetScale(wpSize) //Vector3()
+		.SetPosition(position);
+
+	wp->SetRenderObject(new RenderObject(&wp->GetTransform(), cubeMesh, basicTex, basicShader));
+	wp->SetPhysicsObject(new PhysicsObject(&wp->GetTransform(), wp->GetBoundingVolume()));
+
+	wp->GetPhysicsObject()->SetInverseMass(0);
+	wp->GetPhysicsObject()->InitCubeInertia();
+
+	world->AddGameObject(wp);
+
+	return wp;
 }
 
 GameObject* TutorialGame::AddWallToWorld(const Vector3& position, const Vector3& wallSize) {
@@ -684,6 +737,7 @@ Coin* TutorialGame::AddBonusToWorld(const Vector3& position) {
 		.SetPosition(position);
 
 	coin->SetRenderObject(new RenderObject(&coin->GetTransform(), bonusMesh, nullptr, basicShader));
+	coin->GetRenderObject()->SetColour(Vector3(1.0f, 0.5f, 0.0f));
 	coin->SetPhysicsObject(new PhysicsObject(&coin->GetTransform(), coin->GetBoundingVolume()));
 
 	coin->GetPhysicsObject()->SetInverseMass(0.0f);
