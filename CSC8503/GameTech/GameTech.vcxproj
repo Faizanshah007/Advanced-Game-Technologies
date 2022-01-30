@@ -158,6 +158,9 @@
   <ItemGroup>
     <Text Include="doubts.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TestGrid1.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -13,7 +13,7 @@ public:
 	~WinningPad() {}
 protected:
 	void OnCollisionBegin(GameObject* otherObject) override {
-		specialValue = 1;
+		if(otherObject->GetName() == "playerBall") specialValue = 1;
 	}
 
 };

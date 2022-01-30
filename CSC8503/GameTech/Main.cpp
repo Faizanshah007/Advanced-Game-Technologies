@@ -28,12 +28,42 @@ enum MyMenuOptions
 int currentState = lvl1;
 int menuState = lvl1;
 
+class WinLoseScreen : public PushdownState {
+	PushdownResult OnUpdate(float dt,
+		PushdownState** newState) override {
+		Debug::Print(gameState, Vector2(50, 50), Debug::CYAN);
+		Debug::Print("Score: " + std::to_string(score), Vector2(50, 60), Debug::CYAN);
+		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
+			return PushdownResult::Pop;
+		}
+		g->UpdateGame(dt, -1);
+		return PushdownResult::NoChange;
+	}
+	void OnAwake() override {
+		gameState = g->gameState;
+		score = g->score;
+		g = new TutorialGame(-1);
+	}
+protected:
+	string gameState;
+	float score;
+};
+
 class PauseScreen : public PushdownState {
 	PushdownResult OnUpdate(float dt,
 		PushdownState** newState) override {
+
+		if (reset == 1) {
+			*newState = new WinLoseScreen();
+			reset = 0;
+			return PushdownResult::Push;
+		}
 		
 		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
-			return PushdownResult::Pop;
+			if (reset == -1)
+				return PushdownResult::Pop;
+			else
+				return PushdownResult::NoChange;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
 			currentState = menuState;
@@ -51,7 +81,7 @@ class PauseScreen : public PushdownState {
 			menuState = (menuState - 1);
 			if (menuState < 0) menuState += 3;
 		}
-		Debug::Print("Press esc to continue...", Vector2(30, 30));
+		if(reset == -1)	Debug::Print("Press esc to continue...", Vector2(30, 30));
 		switch (menuState) {
 		case lvl1: Debug::Print("Start Level1  <-------------", Vector2(30, 50), Vector3(1.0f,0.5f,0.5f)); Debug::Print("Start Level2", Vector2(30, 70)); Debug::Print("Quit", Vector2(30, 90)); break;
 		case lvl2: Debug::Print("Start Level1", Vector2(30, 50)); Debug::Print("Start Level2  <-------------", Vector2(30, 70), Vector3(1.0f, 0.5f, 0.5f)); Debug::Print("Quit", Vector2(30, 90)); break;
@@ -66,28 +96,6 @@ class PauseScreen : public PushdownState {
 	}
 };
 
-class WinLoseScreen : public PushdownState {
-	PushdownResult OnUpdate(float dt,
-		PushdownState** newState) override {
-		Debug::Print(gameState, Vector2(50, 50),Debug::CYAN);
-		Debug::Print("Score: " + std::to_string(score), Vector2(50, 60), Debug::CYAN);
-		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
-			reset = -1;
-			return PushdownResult::Pop;
-		}
-		g->UpdateGame(dt, -1);
-		return PushdownResult::NoChange;
-	}
-	void OnAwake() override {
-		gameState = g->gameState;
-		score = g->score;
-		g = new TutorialGame(-1);
-	}
-protected:
-	string gameState;
-	float score;
-};
-
 class GameScreen : public PushdownState {
 	PushdownResult OnUpdate(float dt,
 		PushdownState** newState) override {
@@ -95,14 +103,10 @@ class GameScreen : public PushdownState {
 			return PushdownResult::Pop;
 		}
 
-		if (reset == -1) {
-			*newState = new PauseScreen();
-			reset = 0;
-			return PushdownResult::Push;
-		}
-
 		if (g->gameState == "Won" || g->gameState == "Lost") {
-			*newState = new WinLoseScreen();
+			//*newState = new WinLoseScreen();
+			*newState = new PauseScreen();
+			reset = 1;
 			return PushdownResult::Push;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
@@ -132,8 +136,34 @@ class GameScreen : public PushdownState {
 	};
 	void OnAwake() override {
 		std::cout << "Back to game.!\n";
+		reset = -1;
 	}
 };
+
+//vector <Vector3 > testNodes;
+//void TestPathfinding() {
+//	NavigationGrid grid("TestGrid1.txt");
+//
+//	NavigationPath outPath;
+//
+//	Vector3 startPos(80, 0, 10);
+//	Vector3 endPos(80, 0, 80);
+//
+//	bool found = grid.FindPath(startPos, endPos, outPath);
+//
+//	Vector3 pos;
+//	while (outPath.PopWaypoint(pos)) {
+//		testNodes.push_back(pos);
+//	}
+//}
+//void DisplayPathfinding() {
+//	for (int i = 1; i < testNodes.size(); ++i) {
+//		Vector3 a = testNodes[i - 1];
+//		Vector3 b = testNodes[i];
+//
+//		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
+//	}
+//}
 
 //class IntroScreen : public PushdownState {
 //	PushdownResult OnUpdate(float dt,
@@ -179,6 +209,8 @@ int main() {
 	g = new TutorialGame();
 	PushdownMachine machine(new GameScreen());
 
+	//TestPathfinding();
+
 	w->GetTimer()->GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
 	while (w->UpdateWindow()){// && !Window::GetKeyboard()->KeyDown(KeyboardKeys::ESCAPE)) {
 		float dt = w->GetTimer()->GetTimeDeltaSeconds();
@@ -207,7 +239,7 @@ int main() {
 		if (!machine.Update(dt)) {
 			return 0;
 		}
-
+		//if (currentState == 1) DisplayPathfinding();
 		//g->UpdateGame(dt);
 		//TestStateMachine();
 	}

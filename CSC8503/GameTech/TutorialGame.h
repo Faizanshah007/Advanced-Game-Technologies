@@ -27,6 +27,10 @@ namespace NCL {
 			void UpdateKeys();
 
 			void InitWorld();
+			void Lvl2Updates(float dt);
+			void TestPathfinding(Vector3 currentPos = { 80, 0, 10 });
+			void DisplayPathfinding(float dt);
+
 			void InitWorldTest();
 			
 			void Lvl1();

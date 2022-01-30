@@ -6,8 +6,64 @@
 #include "../../Common/TextureLoader.h"
 #include "../CSC8503Common/PositionConstraint.h"
 
+#include "../CSC8503Common/NavigationGrid.h"
+
 using namespace NCL;
 using namespace CSC8503;
+
+vector <Vector3 > testNodes;
+
+void TutorialGame::TestPathfinding(Vector3 currentPos) {
+	testNodes.clear();
+
+	NavigationGrid grid("TestGrid1.txt");
+
+	if (currentPos == Vector3( 80, 0, 10 )) {
+		for (Vector3 wallPos : grid.wallNodeLocSet) {
+			AddCubeToWorld(wallPos + Vector3(0,2.5,0), Vector3(5, 5, 5),0);
+		}
+	}
+
+	NavigationPath outPath;
+
+	//Vector3 startPos(80, 0, 10);
+	Vector3 endPos = playerBall->GetTransform().GetPosition();//(80, 0, 80);
+
+	bool found = grid.FindPath(currentPos, endPos, outPath);
+
+	Vector3 pos;
+	while (outPath.PopWaypoint(pos)) {
+		testNodes.push_back(pos);
+	}
+}
+
+void TutorialGame::DisplayPathfinding(float dt) {
+	//for (int i = 1; i < testNodes.size(); ++i) {
+
+	if (testNodes.size() < 2) return;
+		Vector3 a = testNodes[0];//[i - 1];
+		Vector3 b = testNodes[1];//[i];
+
+		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
+		/*if ((b - test->GetTransform().GetPosition()).Length() <= 2.0f) {
+			test->GetPhysicsObject()->ClearForces();
+			test->GetPhysicsObject()->SetLinearVelocity({});
+		}*/
+
+		Vector3 currentPos = test->GetTransform().GetPosition();
+		Vector3 requiredPos = ProjectPointOntoVector(a, b, currentPos);
+		Vector3 requiredDirection = (b - a).Normalised();
+		//Vector3 currentDirection = (b - currentPos).Normalised();
+
+		if ((currentPos- requiredPos).Length() > 0.1f) {
+			test->GetPhysicsObject()->AddForce((requiredPos - currentPos).Normalised() * 20 * dt);
+		}
+
+		test->GetPhysicsObject()->AddForce(requiredDirection * 20 * dt);
+
+		
+	//}
+}
 
 TutorialGame::TutorialGame(int level)	{
 	world		= new GameWorld();
@@ -77,7 +133,13 @@ TutorialGame::~TutorialGame()	{
 	delete world;
 }
 
+void TutorialGame::Lvl2Updates(float dt) {
+	TestPathfinding(test->GetTransform().GetPosition());
+	DisplayPathfinding(dt);
+}
+
 void TutorialGame::Lvl1Updates(float dt) {
+
 
 	if (winPad->specialValue == 1) {
 		gameState = "Won";
@@ -167,6 +229,7 @@ void TutorialGame::UpdateGame(float dt, int mode) {
 		}
 
 		if (gameLevel == 1) Lvl1Updates(dt);
+		else if (gameLevel == 2) Lvl2Updates(dt);
 
 		PlayWithPlane();
 		world->UpdateWorld(dt);
@@ -316,13 +379,17 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	/*BridgeConstraintTest();
-	BridgeConstraintTest(Vector3(0,0,-25));
-	AddSphereToWorld(Vector3(0, 20, -10), 10.0f,5.0f);*/
+	GameObject* floor = AddFloorToWorld(Vector3(50,-2,50));
+	Vector3 scale = floor->GetTransform().GetScale();
+	floor->GetTransform().SetScale({ scale.x / 2,scale.y,scale.z / 2 });
 
-	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
-	InitGameExamples();
-	InitDefaultFloor();
+	test = AddCubeToWorld({ 0,0,0 }, { 2.5,2.5,2.5 });
+	test->GetTransform().SetPosition({ 80, 0, 10 });
+
+	playerBall = AddSphereToWorld({}, 3);
+	playerBall->GetTransform().SetPosition({ 80, 1.5, 40 });
+
+	TestPathfinding();
 }
 
 void TutorialGame::InitWorldTest() {
@@ -372,7 +439,9 @@ void TutorialGame::Lvl1() {
 	bumpyTile->GetPhysicsObject()->SetElasticity(1.5f);
 
 	winPad = AddWinningPadToWorld(Vector3(-(baseFloorSize.x - tileSize.x) / 2.0f - 50.0f, 47.0f, (baseFloorSize.z - tileSize.z) / 2.0f - 2.0f), tileSize + Vector3(0, 90, 0));
-
+	AddFloorToWorld(Vector3(-(baseFloorSize.x - tileSize.x) / 2.0f - 50.0f, 1.0f, (baseFloorSize.z - tileSize.z) / 2.0f - 2.0f), tileSize) ->GetRenderObject()
+		->SetColour(Debug::GREEN);
+	
 	AddBonusToWorld(bumpyTile->GetTransform().GetPosition() + Vector3(0, 10, 0));
 	AddBonusToWorld(Vector3() + Vector3(0, 10, 0));
 
@@ -491,7 +560,7 @@ WinningPad* TutorialGame::AddWinningPadToWorld(const Vector3& position, const Ve
 	wp->SetBoundingVolume((CollisionVolume*)volume);
 
 	wp->GetTransform()
-		.SetScale(wpSize) //Vector3()
+		.SetScale(Vector3()) //Vector3()
 		.SetPosition(position);
 
 	wp->SetRenderObject(new RenderObject(&wp->GetTransform(), cubeMesh, basicTex, basicShader));
@@ -639,7 +708,6 @@ void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing,
 
 void TutorialGame::InitDefaultFloor() {
 	AddFloorToWorld(Vector3(0, -2, 0));
-	//AddFloorToWorld(Vector3(0, -40, 0));
 }
 
 void TutorialGame::InitGameExamples() {

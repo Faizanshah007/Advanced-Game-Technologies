@@ -1,6 +1,7 @@
 #pragma once
 #include "NavigationMap.h"
 #include <string>
+
 namespace NCL {
 	namespace CSC8503 {
 		struct GridNode {
@@ -36,6 +37,8 @@ namespace NCL {
 			~NavigationGrid();
 
 			bool FindPath(const Vector3& from, const Vector3& to, NavigationPath& outPath) override;
+
+			std::vector<Vector3> wallNodeLocSet;
 				
 		protected:
 			bool		NodeInList(GridNode* n, std::vector<GridNode*>& list) const;
