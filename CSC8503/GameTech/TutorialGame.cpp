@@ -20,7 +20,7 @@ void TutorialGame::TestPathfinding(Vector3 currentPos) {
 
 	if (currentPos == Vector3( 80, 0, 10 )) {
 		for (Vector3 wallPos : grid.wallNodeLocSet) {
-			AddCubeToWorld(wallPos + Vector3(0,2.5,0), Vector3(5, 5, 5),0);
+			AddCubeToWorld(wallPos + Vector3(0,5,0), Vector3(5, 5, 5),0);
 		}
 	}
 
@@ -38,11 +38,16 @@ void TutorialGame::TestPathfinding(Vector3 currentPos) {
 }
 
 void TutorialGame::DisplayPathfinding(float dt) {
-	//for (int i = 1; i < testNodes.size(); ++i) {
+	/*for (int i = 1; i < testNodes.size(); ++i) {
+		Vector3 a = testNodes[i - 1] ;
+		Vector3 b = testNodes[i] ;
+
+		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
+	}*/
 
 	if (testNodes.size() < 2) return;
-		Vector3 a = testNodes[0];//[i - 1];
-		Vector3 b = testNodes[1];//[i];
+	Vector3 a = testNodes[0];// [i - 1] ;
+	Vector3 b = testNodes[1];// [i] ;
 
 		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
 		/*if ((b - test->GetTransform().GetPosition()).Length() <= 2.0f) {
@@ -62,8 +67,8 @@ void TutorialGame::DisplayPathfinding(float dt) {
 		test->GetPhysicsObject()->AddForce(requiredDirection * 20 * dt);
 
 		
-	//}
-}
+	}
+//}
 
 TutorialGame::TutorialGame(int level)	{
 	world		= new GameWorld();
@@ -379,15 +384,17 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	GameObject* floor = AddFloorToWorld(Vector3(50,-2,50));
+	GameObject* floor = AddFloorToWorld(Vector3(45,-2,45));
 	Vector3 scale = floor->GetTransform().GetScale();
 	floor->GetTransform().SetScale({ scale.x / 2,scale.y,scale.z / 2 });
 
 	test = AddCubeToWorld({ 0,0,0 }, { 2.5,2.5,2.5 });
 	test->GetTransform().SetPosition({ 80, 0, 10 });
+	test->GetRenderObject()->SetColour(Debug::RED);
 
 	playerBall = AddSphereToWorld({}, 3);
 	playerBall->GetTransform().SetPosition({ 80, 1.5, 40 });
+	playerBall->GetRenderObject()->SetColour(Debug::CYAN);
 
 	TestPathfinding();
 }
