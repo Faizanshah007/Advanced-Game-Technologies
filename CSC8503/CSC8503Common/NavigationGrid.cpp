@@ -2,6 +2,7 @@
 #include "../../Common/Assets.h"
 
 #include <fstream>
+#include "Debug.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -78,11 +79,15 @@ NavigationGrid::~NavigationGrid()	{
 
 bool NavigationGrid::FindPath(const Vector3& from, const Vector3& to, NavigationPath& outPath) {
 	//need to work out which node 'from' sits in, and 'to' sits in
-	int fromX = (((int)from.x + nodeSize/2 - 1)/ nodeSize);
-	int fromZ = (((int)from.z + nodeSize / 2 - 1) / nodeSize);
+	int fromX = ((int)(from.x + nodeSize / 2.0)/ nodeSize);
+	int fromZ = ((int)(from.z + nodeSize / 2.0) / nodeSize);
 
-	int toX = (((int)to.x + nodeSize / 2 - 1) / nodeSize);
-	int toZ = (((int)to.z + nodeSize / 2 - 1) / nodeSize);
+	//Debug::Print("here1- " + std::to_string(fromZ) + ", " + std::to_string(fromX), Vector2(20.0f, 10.0f));
+
+	int toX = ((int)(to.x + nodeSize / 2.0) / nodeSize);
+	int toZ = ((int)(to.z + nodeSize / 2.0) / nodeSize);
+
+	//Debug::Print("here2- " + std::to_string(toZ) + ", " + std::to_string(toX), Vector2(20.0f, 30.0f));
 
 	if (fromX < 0 || fromX > gridWidth - 1 ||
 		fromZ < 0 || fromZ > gridHeight - 1) {
